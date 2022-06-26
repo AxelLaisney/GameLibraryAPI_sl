@@ -21,16 +21,13 @@ namespace GameLibraryAPI.Controllers
             return Ok(await _context.Games.ToListAsync());
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Game>> Get(int id)
+        [HttpGet("{genre?}/{completion?}")]
+        public async Task<ActionResult<List<Game>>> Get(int genre, int completion)
         {
-            var game = await _context.Games.FindAsync(id);
-            if (game == null)
-            {
-                return BadRequest("Game not found");
-            }
-            return Ok(game);
-            
+            //(int)Enum to cast enum as a readable int
+            var games = await _context.Games.Where(x => genre == (int)x.Genre && completion == (int)x.Completion).ToListAsync();
+            List<int> Truc = new List<int> { genre, completion };
+            return Ok(games);
         }
 
         [HttpGet("name")]
@@ -42,6 +39,7 @@ namespace GameLibraryAPI.Controllers
 
         #endregion
 
+        #region Delete method
         [HttpDelete("{id}")]
         public async  Task<ActionResult> Delete(int id)
         {
@@ -54,7 +52,9 @@ namespace GameLibraryAPI.Controllers
             await _context.SaveChangesAsync();
             return Ok("Game has been deleted");
         }
+        #endregion
 
+        #region Put/Update method
         [HttpPut]
         public async Task<ActionResult> UpdateGame(Game request)
         {
@@ -72,7 +72,9 @@ namespace GameLibraryAPI.Controllers
             await _context.SaveChangesAsync();
             return Ok("Game has been updated");
         }
+        #endregion
 
+        #region Post method
         [HttpPost]
         public async Task<ActionResult> AddGame(Game request)
         {
@@ -81,5 +83,6 @@ namespace GameLibraryAPI.Controllers
             await _context.SaveChangesAsync();
             return Ok("Game has been added");
         }
+        #endregion
     }
 }

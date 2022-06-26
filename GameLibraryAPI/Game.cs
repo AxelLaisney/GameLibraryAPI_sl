@@ -15,5 +15,9 @@ namespace GameLibraryAPI
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public _Completion Completion { get; set; }
+        public string Cover { get; set; }
+        public string Console { get; set; }
+
+ 
     }
 }
