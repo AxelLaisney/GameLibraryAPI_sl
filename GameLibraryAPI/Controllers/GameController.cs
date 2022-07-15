@@ -22,12 +22,25 @@ namespace GameLibraryAPI.Controllers
         }
 
         [HttpGet("{genre?}/{completion?}")]
-        public async Task<ActionResult<List<Game>>> Get(int genre, int completion)
+        public async Task<ActionResult<List<Game>>> Get(int genre = 0, int  completion = 0)
         {
             //(int)Enum to cast enum as a readable int
-            var games = await _context.Games.Where(x => genre == (int)x.Genre && completion == (int)x.Completion).ToListAsync();
-            List<int> Truc = new List<int> { genre, completion };
-            return Ok(games);
+            if(genre != 0 && completion == 0)
+            {
+                var games = await _context.Games.Where(x => genre == (int)x.Genre).ToListAsync();
+                return Ok(games);
+            }else if(genre == 0 && completion != 0){
+                var games = await _context.Games.Where(x => completion == (int)x.Completion).ToListAsync();
+                return Ok(games);
+            }else if(genre == 0 && completion == 0)
+            {
+                return Ok(await _context.Games.ToListAsync());
+            }
+            else
+            {
+                var games = await _context.Games.Where(x => genre == (int)x.Genre && completion == (int)x.Completion).ToListAsync();
+                return Ok(games);
+            }
         }
 
         [HttpGet("name")]
@@ -35,6 +48,12 @@ namespace GameLibraryAPI.Controllers
         {
             var games = await _context.Games.Where(x => x.Name.Contains(name)).ToListAsync();
             return Ok(games);
+        }
+
+        [HttpGet("console")]
+        public async Task<ActionResult<List<Game>>> GetConsole(string console)
+        {
+            return Ok(await _context.Games.Where(x => x.Console.Contains(console)).ToListAsync());
         }
 
         #endregion
