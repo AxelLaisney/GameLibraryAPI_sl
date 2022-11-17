@@ -1,4 +1,5 @@
 ﻿using GameLibraryAPI.Data;
+using GameLibraryAPI.DTO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,53 +17,26 @@ namespace GameLibraryAPI.Controllers
 
         #region Get methods
         [HttpGet]
-        public async Task<ActionResult<List<Game>>> Get()
+        public async Task<ActionResult<List<Game>>> GetGame()
         {
-            return Ok(await _context.Games.ToListAsync());
-        }
-
-        [HttpGet("{genre?}/{completion?}")]
-        public async Task<ActionResult<List<Game>>> Get(int genre = 0, int  completion = 0)
-        {
-            //(int)Enum to cast enum as a readable int
-            if(genre != 0 && completion == 0)
+            var Initialresults = await _context.Games.Include(g => g.Genre).Include(g => g.Consoles).ToListAsync();
+            //var Initialresults = await _context.Games.ToListAsync();
+            List<GameResult> Results = new List<GameResult>();
+            foreach (Game InitialResult in Initialresults)
             {
-                var games = await _context.Games.Where(x => genre == (int)x.Genre).ToListAsync();
-                return Ok(games);
-            }else if(genre == 0 && completion != 0){
-                var games = await _context.Games.Where(x => completion == (int)x.Completion).ToListAsync();
-                return Ok(games);
-            }else if(genre == 0 && completion == 0)
-            {
-                return Ok(await _context.Games.ToListAsync());
+                GameResult GameResult= new GameResult(InitialResult);
+                Results.Add(GameResult);
             }
-            else
-            {
-                var games = await _context.Games.Where(x => genre == (int)x.Genre && completion == (int)x.Completion).ToListAsync();
-                return Ok(games);
-            }
-        }
-
-        [HttpGet("name")]
-        public async Task<ActionResult<List<Game>>> Get(string name)
-        {
-            var games = await _context.Games.Where(x => x.Name.Contains(name)).ToListAsync();
-            return Ok(games);
-        }
-
-        [HttpGet("console")]
-        public async Task<ActionResult<List<Game>>> GetConsole(string console)
-        {
-            return Ok(await _context.Games.Where(x => x.Console.Contains(console)).ToListAsync());
+            return Ok(Results);
         }
 
         #endregion
 
         #region Delete method
         [HttpDelete("{id}")]
-        public async  Task<ActionResult> Delete(int id)
+        public async Task<ActionResult> DeleteGame(int id)
         {
-            var game = _context.Games.Find(id);
+            var game = await _context.Games.Include(g => g.Genre).Include(g => g.Consoles).FirstOrDefaultAsync(g => g.GameId == id);
             if (game == null)
             {
                 return BadRequest("Game not found");
@@ -75,18 +49,28 @@ namespace GameLibraryAPI.Controllers
 
         #region Put/Update method
         [HttpPut]
-        public async Task<ActionResult> UpdateGame(Game request)
+        public async Task<ActionResult> UpdateGame(GameRequest request)
         {
-            var game = await _context.Games.FindAsync(request.Id);
-            if(game == null)
+            GameRequest gameRequest = request;
+            List<Console> GameConsoles = new List<Console>();
+            foreach(ConsoleRequest requestConsole in request.ConsolesList)
+            {
+                Console console = await _context.Consoles.FindAsync(requestConsole.ConsoleId);
+                GameConsoles.Add(console);
+            }
+            Game game = await _context.Games.Include(g => g.Genre).Include(g => g.Consoles).FirstOrDefaultAsync(g => g.GameId == gameRequest.GameId);
+            if (game == null)
             {
                 return BadRequest("Game not found");
             }
-            game.Id = request.Id;
-            game.Name = request.Name;
-            game.Publisher = request.Publisher;
-            game.Genre = request.Genre;
-            game.Completion = request.Completion;
+
+            game.Name = gameRequest.Name;
+            game.Publisher = gameRequest.Publisher;
+            game.ReleaseDate = gameRequest.ReleaseDate;
+            game.GenreId = gameRequest.GenreId;
+            game.Completion = gameRequest.Completion;
+            game.Consoles = GameConsoles;
+                
             
             await _context.SaveChangesAsync();
             return Ok("Game has been updated");
@@ -95,9 +79,24 @@ namespace GameLibraryAPI.Controllers
 
         #region Post method
         [HttpPost]
-        public async Task<ActionResult> AddGame(Game request)
+        public async Task<ActionResult> AddGame(GameRequest request)
         {
-            var game = request;
+            List<Console> Consoles = new List<Console>();
+            foreach(ConsoleRequest consoleRequest in request.ConsolesList)
+            {
+                Console console = await _context.Consoles.FindAsync(consoleRequest.ConsoleId);
+                Consoles.Add(console);
+            }
+
+            Game game = new Game()
+            {
+                Name = request.Name,
+                Publisher = request.Publisher,
+                Completion = request.Completion,
+                GenreId = request.GenreId,
+                Consoles = Consoles,
+                ReleaseDate = request.ReleaseDate
+            };
             _context.Games.Add(game);
             await _context.SaveChangesAsync();
             return Ok("Game has been added");

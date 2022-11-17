@@ -1,22 +1,22 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace GameLibraryAPI
 {
     public class Game
     {
-        public int Id { get; set; }
+        [Key]
+        public int GameId { get; set; }
+
         public string Name { get; set; }
         public string Publisher { get; set; }
-        public enum _Genre { All, Platformer, Horror, Rpg, Survival, Vr, Roguelike, Adventure, Exploration}
-        public enum _Completion { All, NotStarted, OnGoing, Finished, Todo}
-
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public _Genre Genre { get; set; }
-
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public _Completion Completion { get; set; }
-        public string Cover { get; set; }
-        public string Console { get; set; }
+        public string Completion { get; set; }
+        public DateTime ReleaseDate { get; set; }
+        public virtual Genre Genre { get; set; }
+        [ForeignKey("GenreId")]
+        public int GenreId { get; set; }
+        public List<Console> Consoles { get; set; }
 
  
     }
